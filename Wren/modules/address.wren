@@ -26,9 +26,32 @@ class Address {
 	post_code = (value) { _post_code = value }
 
 	country { _country }
-	country = (value) { _country = value }		
+	country = (value) { _country = value }	
 
-	toString() {
+	iterate(value) {
+		//System.print("iterate")
+		//System.print(value)
+		var address = this.toArray()
+		//System.print(address.join("."))
+		if (value == null) value = -1
+		var next = value + 1
+		var response = false
+		var fiber = Fiber.new {
+			if (address[next] != null) response = next
+		}
+		var error = fiber.try()
+		//System.print(error)
+		return response
+	}
+
+	iteratorValue(value) {
+		//System.print("iteratorValue")
+		//System.print(value)
+		var address = this.toArray()
+		return address[value]
+	}
+
+	toArray() {
 		var address = []
 		if (_line1 != null) address.add(_line1)
 		if (_line2 != null) address.add(_line2)
@@ -37,7 +60,11 @@ class Address {
 		if (_county != null) address.add(_county)
 		if (post_code != null) address.add(post_code)
 		if (_country != null) address.add(_country.name)
+		return address
+	}
 
+	toString() {
+		var address = this.toArray()
 		return address.join(", ")
 	}		
 }

@@ -4,9 +4,15 @@ import "./modules/address" for Address
 
 var address = Address.new()
 
+
+
 address.line1 = "59 Broadway"
 address.town = "Exeter"
 address.country.name = "United Kingdom"
+
+for (x in address) System.print(x)
+
+System.print("######")
 
 System.print(address.line1)
 System.print(address.country.name)
