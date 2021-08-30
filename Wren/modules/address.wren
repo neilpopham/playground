@@ -3,7 +3,6 @@ import "./country" for Country
 class Address {
 
 	construct new() {
-		_line1 = "foo"
 		_country = Country.new()
 	}
 
@@ -28,43 +27,47 @@ class Address {
 	country { _country }
 	country = (value) { _country = value }	
 
+	[index] {
+		this.updateArray()
+		return index < _array.count ? _array[index] : null 	
+	}
+	//[index]=(value) { _array[index] = value }
+
 	iterate(value) {
-		//System.print("iterate")
-		//System.print(value)
-		var address = this.toArray()
-		//System.print(address.join("."))
-		if (value == null) value = -1
-		var next = value + 1
-		var response = false
-		var fiber = Fiber.new {
-			if (address[next] != null) response = next
+		if (value == null) {
+			_next = 0
+			this.updateArray()
+		} else {
+			_next = value + 1
 		}
-		var error = fiber.try()
-		//System.print(error)
-		return response
+		//System.print("count is %(_array.count)")
+		if (_next == _array.count) return false
+		//System.print("iterate")
+		//System.print(_next)
+		return _next
 	}
 
 	iteratorValue(value) {
 		//System.print("iteratorValue")
 		//System.print(value)
-		var address = this.toArray()
-		return address[value]
+		return _array[value]
 	}
 
-	toArray() {
-		var address = []
-		if (_line1 != null) address.add(_line1)
-		if (_line2 != null) address.add(_line2)
-		if (_line3 != null) address.add(_line3)
-		if (_town != null) address.add(_town)
-		if (_county != null) address.add(_county)
-		if (post_code != null) address.add(post_code)
-		if (_country != null) address.add(_country.name)
-		return address
+	updateArray() {
+		_array = []
+		if (_line1 != null) _array.add(_line1)
+		if (_line2 != null) _array.add(_line2)
+		if (_line3 != null) _array.add(_line3)
+		if (_town != null) _array.add(_town)
+		if (_county != null) _array.add(_county)
+		if (post_code != null) _array.add(post_code)
+		if (_country.name != null) _array.add(_country.name)
+		//System.print(_array.join("#"))
+		return _array
 	}
 
 	toString() {
-		var address = this.toArray()
-		return address.join(", ")
+		this.updateArray()
+		return _array.join(", ")
 	}		
 }
