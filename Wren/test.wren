@@ -13,7 +13,7 @@ var country = Country.new()
 country.name = "United Kingdom"
 address.country = country
 
-for (x in address) System.print(x)
+for (line in address) System.print(line)
 
 System.print("######")
 
