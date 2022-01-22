@@ -2,7 +2,8 @@
 <html>
 <head>
 	<title></title>
-	<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+	<script src="https://unpkg.com/vue@next"></script>
+</script>
 </head>
 <body>
 
@@ -22,7 +23,23 @@
   </ol>
 </div>
 
-<div id="cards"><Cards /></div>
+<div id="cards">
+  <h1>Cards</h1>
+  <Cards v-bind:cards="cards" />
+  <hr />
+  <h1>Cards</h1>
+</div>
+
+<div id="counter">
+  Counter: {{ counter }}
+</div>
+
+<div id="todo">
+  <ol>
+    <!-- Create an instance of the todo-item component -->
+    <todo-item></todo-item>
+  </ol>
+</div>
 
 </body>
 <script src="vue.js"></script>
