@@ -39,7 +39,7 @@ const Cards = {
 }
 
 const cards = Vue.createApp({
-  components: { Card, Cards },
+  components: { Cards },
   data() {
     return {
       cards: [
