@@ -1,3 +1,4 @@
 *.o
 *.pdb
 *.exe
+**/target/**
