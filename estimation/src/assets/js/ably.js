@@ -1,6 +1,7 @@
 const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');
 
 function getSessionChannel() {
+    // window.zatsuite.store.state.session
     const session = { slug: 'test' }; // localStorage.getItem('session');
     if (session) {
         return ably.channels.get(session.slug);
@@ -13,11 +14,11 @@ function clone(object) {
 }
 
 export class Publish {
-    static join(store) {
+    static join() {
         console.log('Publish.join');
         const channel = getSessionChannel();
         if (channel) {
-            const user = window.store.getters.user;
+            const user = window.zatsuite.store.getters.user;
             console.log(channel.name, user);
             channel.publish('join', user);
         }
@@ -26,7 +27,7 @@ export class Publish {
         console.log('Publish.welcome');
         const channel = getSessionChannel();
         if (channel) {
-            const user = window.store.getters.user;
+            const user = window.zatsuite.store.getters.user;
             console.log(channel.name, user);
             channel.publish('leave', user);
         }
@@ -35,7 +36,7 @@ export class Publish {
         console.log('Publish.welcome');
         const channel = getSessionChannel();
         if (channel) {
-            const user = window.store.getters.user;
+            const user = window.zatsuite.store.getters.user;
             console.log(channel.name, user);
             channel.publish('welcome', user);
         }
@@ -44,25 +45,25 @@ export class Publish {
         console.log('Publish.pick');
         const channel = getSessionChannel();
         if (channel) {
-            const user = window.store.getters.user;
-            console.log(channel.name, user);          
+            const user = window.zatsuite.store.getters.user;
+            console.log(channel.name, user);
             channel.publish('pick', user);
         }
-    }  
+    }
     static reveal() {
         console.log('Publish.reveal');
         const channel = getSessionChannel();
         if (channel) {
             channel.publish('reveal', 'hello');
         }
-    }     
+    }
     static reset() {
         console.log('Publish.reset');
         const channel = getSessionChannel();
         if (channel) {
             channel.publish('reset', 'hello');
         }
-    }       
+    }
 }
 
 export class Subscribe {
@@ -73,41 +74,41 @@ export class Subscribe {
             channel.subscribe('join', function(message) {
                 console.log('Subscribe.join');
                 console.log(message.data);
-                const user = window.store.getters.user; // clone(window.store.getters.user);
+                const user = window.zatsuite.store.getters.user; // clone(store.getters.user);
                 console.log(user);
-                //window.store.commit('reset');
+                //window.zatsuite.store.commit('reset');
                 Publish.welcome(user);
             });
 
             channel.subscribe('leave', function(message) {
                 console.log('Subscribe.leave');
                 console.log(message.data);
-                window.store.commit('remove', message.data);
+                window.zatsuite.store.commit('remove', message.data);
             });
 
             channel.subscribe('welcome', function(message) {
                 console.log('Subscribe.welcome');
                 console.log(message.data);
-                window.store.commit('upsert', message.data);
+                window.zatsuite.store.commit('upsert', message.data);
             });
 
             channel.subscribe('pick', function(message) {
                 console.log('Subscribe.pick');
                 console.log(message.data);
-                window.store.commit('pick', message.data);
+                window.zatsuite.store.commit('pick', message.data);
             });
 
             channel.subscribe('reveal', function(message) {
                 console.log('Subscribe.reveal');
                 console.log(message.data);
-                window.store.commit('reveal', message.data);
+                window.zatsuite.store.commit('reveal', message.data);
             });
 
             channel.subscribe('reset', function(message) {
                 console.log('Subscribe.reset');
                 console.log(message.data);
-                window.store.commit('reset', message.data);
-            });                                                            
+                window.zatsuite.store.commit('reset');
+            });
         }
     }
     /*
@@ -160,6 +161,6 @@ export class Subscribe {
                 console.log(message.data);
             });
         }
-    }  
-    */               
+    }
+    */
 }

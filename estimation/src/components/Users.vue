@@ -2,7 +2,7 @@
     <h1>{{ users.length }} {{ count }}</h1>
     <ul id="example-1">
         <li v-for="user in sorted" :key="user.uuid">
-            {{ user.name }}
+            {{ user }}
         </li>
     </ul>
 </template>
