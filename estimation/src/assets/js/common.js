@@ -21,3 +21,7 @@ export const STATE = {
     ESTIMATED: 3,
     REVEALED: 4,
 };
+
+export const DEFAULTS = {
+    SESSION : { id: 0, slug: getUuid() },
+};

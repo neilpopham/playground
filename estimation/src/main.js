@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import store from './store'
 import App from './App.vue'
 import { Publish, Subscribe } from './assets/js/ably.js'
-import { getUuid } from './assets/js/common.js'
+import { getUuid, DEFAULTS } from './assets/js/common.js'
 import './index.css'
 
 window.zatsuite = { store: store };
@@ -35,5 +35,6 @@ window.addEventListener("beforeunload", (e) => {
 
 
 // TESTING
+store.dispatch('save', DEFAULTS.SESSION);
 Subscribe.session();
 Publish.join();

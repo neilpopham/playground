@@ -25,4 +25,8 @@ export default {
         console.log('leave');
         commit('leave');
     },
+    session({ commit }, session) {
+        console.log('session');
+        commit('session', session);
+    },
 }

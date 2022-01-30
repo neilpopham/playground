@@ -1,10 +1,6 @@
 import getters from './getters'
-import { getUuid } from '../assets/js/common.js'
+import { getUuid, STATE, DEFAULTS } from '../assets/js/common.js'
 import { Publish, Subscribe } from '../assets/js/ably.js'
-
-const defaults = {
-	SESSION : { id: 0, slug: getUuid() },
-};
 
 export default {
     add(state, user) {
@@ -37,7 +33,7 @@ export default {
         }
     },
     reveal(state) {
-
+    	state.state = STATE.REVEALED;
     },
     reset(state) {
     	const session = state.session.slug;
@@ -69,14 +65,20 @@ export default {
     	if (user.session[session] && user.session[session].card) {
         	user.session[session].card = null;
         }
+        //user.session = { [session]: {} };
         state.state = 1;
         state.users = [user];
-        state.session = defaults.SESSION;
+        state.session = DEFAULTS.SESSION;
     	Publish.leave(user);
     },
     register(state, payload) {
     	const user = getters.user(state);
     	user.name = payload.name;
     	user.role = payload.role;
+    },
+    session(state, session) {
+    	state.session = session;
+    	const user = getters.user(state);
+    	user.session = { [session]: {} };
     }
 }

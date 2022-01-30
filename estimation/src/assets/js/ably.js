@@ -25,7 +25,7 @@ export class Publish {
         }
     }
     static leave() {
-        console.log('Publish.welcome');
+        console.log('Publish.leave');
         const channel = getSessionChannel();
         if (channel) {
             const user = window.zatsuite.store.getters.user;
@@ -55,14 +55,14 @@ export class Publish {
         console.log('Publish.reveal');
         const channel = getSessionChannel();
         if (channel) {
-            channel.publish('reveal', 'hello');
+            channel.publish('reveal', '');
         }
     }
     static reset() {
         console.log('Publish.reset');
         const channel = getSessionChannel();
         if (channel) {
-            channel.publish('reset', 'hello');
+            channel.publish('reset', '');
         }
     }
 }
@@ -75,9 +75,7 @@ export class Subscribe {
             channel.subscribe('join', function(message) {
                 console.log('Subscribe.join');
                 console.log(message.data);
-                const user = window.zatsuite.store.getters.user; // clone(store.getters.user);
-                console.log(user);
-                //window.zatsuite.store.commit('reset');
+                const user = window.zatsuite.store.getters.user;
                 Publish.welcome(user);
             });
 
@@ -101,13 +99,11 @@ export class Subscribe {
 
             channel.subscribe('reveal', function(message) {
                 console.log('Subscribe.reveal');
-                console.log(message.data);
                 window.zatsuite.store.commit('reveal', message.data);
             });
 
             channel.subscribe('reset', function(message) {
                 console.log('Subscribe.reset');
-                console.log(message.data);
                 window.zatsuite.store.commit('reset');
             });
         }

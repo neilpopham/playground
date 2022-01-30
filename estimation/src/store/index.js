@@ -2,7 +2,7 @@ import { createStore } from 'vuex'
 import mutations from './mutations'
 import actions from './actions'
 import getters from './getters'
-import { getUuid, STATE } from '../assets/js/common.js'
+import { getUuid, STATE, DEFAULTS } from '../assets/js/common.js'
 
 export default createStore({
     state () {
@@ -22,7 +22,7 @@ export default createStore({
             users: [],
             uuid: getUuid(),
             state: STATE.LOBBY,
-            session: { slug: 'test' }, // { id: 0, slug: getUuid() }
+            session: DEFAULTS.SESSION,
         }
     },
     getters,
