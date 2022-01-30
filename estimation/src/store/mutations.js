@@ -74,14 +74,9 @@ export default {
         state.session = defaults.SESSION;
     	Publish.leave(user);
     },
-    save(state) {
+    register(state, payload) {
     	const user = getters.user(state);
-    	//user.session = {};
-    	localStorage.setItem('user', JSON.stringify(user));
-    },
-    register(state, name, role) {
-    	const user = getters.user(state);
-    	user.name = name;
-    	user.role = role;
+    	user.name = payload.name;
+    	user.role = payload.role;
     }
 }

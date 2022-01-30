@@ -4,6 +4,7 @@
     <button class="btn" @click="selectCard">Pick</button>
     <button class="btn" @click="resetCards">Reset</button>
     <button class="btn" @click="leaveSession">Leave</button>
+    <button class="btn" @click="testRegister">Register</button>
 </template>
 
 <script>
@@ -27,7 +28,13 @@ export default {
         },
         leaveSession() {
             this.$store.dispatch('leave');    
-        }
+        },
+        testRegister() {
+            this.$store.dispatch(
+                'register',
+                { name: 'Neil', role: { id: 3, name: 'Designer', estimates: true } }
+            );  
+        },
         //...mapActions(['pick']),
         /*
         ...mapActions([

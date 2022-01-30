@@ -1,9 +1,13 @@
 import { Publish, Subscribe } from '../assets/js/ably.js'
 
 export default {
-    register({ commit, state }, name, role) {
-        commit('register', name, role);
-        commit('save');
+    save({ getters }) {
+        const user = getters.user;
+        localStorage.setItem('user', JSON.stringify(user));
+    },
+    register({ commit, dispatch }, payload) {
+        commit('register', payload);
+        dispatch('save');
     },
     pick({ commit, state }, card) {
         console.log('pick', card);

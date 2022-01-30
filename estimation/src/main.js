@@ -15,6 +15,9 @@ console.log(window.location.hash);
 
 const USER_VERSION = 1;
 let user = localStorage.getItem('user');
+if (user != null) {
+    user = JSON.parse(localStorage.getItem('user'));
+}
 if ((user == null) || (user.version == undefined) || (user.version != USER_VERSION)) {
     user = {
         version: USER_VERSION,
@@ -23,13 +26,11 @@ if ((user == null) || (user.version == undefined) || (user.version != USER_VERSI
         session: {},
         role: store.state.roles[1],
     }
-} else {
-    user = JSON.parse(user);
 }
 store.commit('add', user);
 
 window.addEventListener("beforeunload", (e) => {
-    store.commit('save');
+    store.dispatch('save');
 });
 
 
