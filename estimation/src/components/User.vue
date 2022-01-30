@@ -3,6 +3,7 @@
     <!-- <h2>uu {{ uuid }}</h2> -->
     <button class="btn" @click="selectCard">Pick</button>
     <button class="btn" @click="resetCards">Reset</button>
+    <button class="btn" @click="leaveSession">Leave</button>
 </template>
 
 <script>
@@ -24,6 +25,9 @@ export default {
         resetCards() {
             this.$store.dispatch('reset');
         },
+        leaveSession() {
+            this.$store.dispatch('leave');    
+        }
         //...mapActions(['pick']),
         /*
         ...mapActions([

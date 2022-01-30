@@ -1,5 +1,10 @@
 <template>
-    <h1>{{ users.length }} {{ count }}</h1>
+    <h1>{{ users.length }} {{ state }}</h1>
+    <h2>Session: {{ session }}</h2>
+    <h2>Estimates: {{ estimates.length }}</h2>
+    <h2>Estimated: {{ estimated.length }}</h2>
+    <h2>Can Reveal: {{ canReveal }}</h2>
+    <h2>Avg: {{ average }}</h2>
     <ul id="example-1">
         <li v-for="user in sorted" :key="user.uuid">
             {{ user }}
@@ -13,11 +18,12 @@ import { mapGetters } from 'vuex'
 
 export default {
     computed: {
-        count() {
-            return this.$store.state.users.length;
+        canReveal() {
+            const getters = this.$store.getters; 
+            return getters.estimates.length == getters.estimated.length;
         },
-        ...mapState(['users']),
-        ...mapGetters(['user', 'sorted'])
+        ...mapState(['users', 'session', 'state']),
+        ...mapGetters(['user', 'sorted', 'estimates', 'estimated', 'average'])
     }
 }
 </script>

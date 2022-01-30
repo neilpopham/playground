@@ -1,17 +1,18 @@
 const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');
 
 function getSessionChannel() {
-    // window.zatsuite.store.state.session
-    const session = { slug: 'test' }; // localStorage.getItem('session');
+    const session = window.zatsuite.store.state.session;
     if (session) {
         return ably.channels.get(session.slug);
     }
     return null;
 }
 
+/*
 function clone(object) {
     return JSON.parse(JSON.stringify(object));
 }
+*/
 
 export class Publish {
     static join() {
