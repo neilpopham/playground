@@ -78,9 +78,13 @@ export default {
     	user.name = payload.name;
     	user.role = payload.role;
     },
-    session(state, session) {
+    join(state, session) {
     	state.session = session;
+    	state.session.state = STATE.ESTIMATING;
     	const user = getters.user(state);
     	user.session = { [session.slug]: {} };
+    },
+    session(state, status) {
+    	state.session.state = status;
     }
 }

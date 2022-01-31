@@ -1,4 +1,8 @@
-const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');
+// Personal
+const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');n
+
+// Unity 5
+// var ably = new Ably.Realtime('0cEZ1Q.S0oWpQ:9T9K8HUX7Sk5FF07Yj0cagRKhzmATCWa1Ynl9EwLaEg');
 
 function getSessionChannel() {
     const session = window.zatsuite.store.state.session;
@@ -38,9 +42,10 @@ export class Publish {
         console.log('Publish.welcome');
         const channel = getSessionChannel();
         if (channel) {
+            const session = window.zatsuite.store.state.session;
             const user = window.zatsuite.store.getters.user;
             console.log(channel.name, user);
-            channel.publish('welcome', user);
+            channel.publish('welcome', { user: user, state: session.state });
         }
     }
     static pick() {
@@ -89,7 +94,9 @@ export class Subscribe {
             channel.subscribe('welcome', function(message) {
                 console.log('Subscribe.welcome');
                 console.log(message.data);
-                window.zatsuite.store.commit('upsert', message.data);
+                window.zatsuite.store.commit('upsert', message.data.user);
+                console.log(message.data.state);
+                window.zatsuite.store.commit('session', message.data.state);
             });
 
             channel.subscribe('pick', function(message) {

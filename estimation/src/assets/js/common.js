@@ -23,5 +23,5 @@ export const STATE = {
 };
 
 export const DEFAULTS = {
-    SESSION : { id: 0, slug: getUuid() },
+    SESSION : { id: 0, slug: getUuid(), state: STATE.LOBBY },
 };

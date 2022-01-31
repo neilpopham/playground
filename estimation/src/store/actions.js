@@ -27,7 +27,7 @@ export default {
     },
     join({ commit }, session) {
         console.log('join', session);
-        commit('session', session);
+        commit('join', session);
         Subscribe.session();
         Publish.join();
     },

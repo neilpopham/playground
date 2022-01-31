@@ -14,10 +14,10 @@ export default createStore({
                 { id: 4, name: 'QA', estimates: true },
             ],
             sessions: [
-                { id: 1, 'name': 'ZatSuite', 'slug': 'suite' },
-                { id: 2, 'name': 'ZatPark', 'slug': 'park' },
-                { id: 3, 'name': 'ZatPermit', 'slug': 'permit' },
-                { id: 4, 'name': 'ZatMobile', 'slug': 'mobile' },
+                { id: 1, 'name': 'ZatSuite', 'slug': 'suite', state: null },
+                { id: 2, 'name': 'ZatPark', 'slug': 'park', state: null },
+                { id: 3, 'name': 'ZatPermit', 'slug': 'permit', state: null },
+                { id: 4, 'name': 'ZatMobile', 'slug': 'mobile', state: null },
             ],
             cards: [
                 { number: 0, text: '?'},
