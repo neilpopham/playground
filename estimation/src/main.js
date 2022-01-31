@@ -31,10 +31,5 @@ store.commit('add', user);
 
 window.addEventListener("beforeunload", (e) => {
     store.dispatch('save');
+    Publish.leave();
 });
-
-
-// TESTING
-store.dispatch('save', DEFAULTS.SESSION);
-Subscribe.session();
-Publish.join();

@@ -24,7 +24,7 @@ export default {
             if (this.$store.state.state == STATE.REVEALED) {
                 return false;
             }
-            const getters = this.$store.getters; 
+            const getters = this.$store.getters;
             return getters.estimates.length == getters.estimated.length;
         },
         ...mapState(['users', 'session', 'state']),

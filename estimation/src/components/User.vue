@@ -5,6 +5,7 @@
     <button class="btn" @click="resetCards">Reset</button>
     <button class="btn" @click="leaveSession">Leave</button>
     <button class="btn" @click="testRegister">Register</button>
+
 </template>
 
 <script>
@@ -27,13 +28,14 @@ export default {
             this.$store.dispatch('reset');
         },
         leaveSession() {
-            this.$store.dispatch('leave');    
+            this.$store.dispatch('leave');
         },
         testRegister() {
             this.$store.dispatch(
                 'register',
                 { name: 'Neil', role: { id: 3, name: 'Designer', estimates: true } }
-            );  
+            );
+            this.$store.dispatch('join', this.$store.state.sessions[0]);
         },
         //...mapActions(['pick']),
         /*
@@ -46,7 +48,7 @@ export default {
         ...mapActions({
             add: 'increment' // map `this.add()` to `this.$store.dispatch('increment')`
         })
-        */      
+        */
     }
 }
 </script>

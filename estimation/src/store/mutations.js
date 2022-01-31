@@ -24,6 +24,7 @@ export default {
         const i = state.users.findIndex(u => u.uuid == user.uuid);
         if (i > -1) {
             delete state.users[i];
+            state.users.splice(i, 1);
         }
     },
     pick(state, user) {
@@ -66,10 +67,11 @@ export default {
         	user.session[session].card = null;
         }
         //user.session = { [session]: {} };
+        Publish.leave(user);
         state.state = 1;
         state.users = [user];
         state.session = DEFAULTS.SESSION;
-    	Publish.leave(user);
+
     },
     register(state, payload) {
     	const user = getters.user(state);
@@ -79,6 +81,6 @@ export default {
     session(state, session) {
     	state.session = session;
     	const user = getters.user(state);
-    	user.session = { [session]: {} };
+    	user.session = { [session.slug]: {} };
     }
 }

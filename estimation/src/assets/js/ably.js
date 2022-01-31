@@ -31,6 +31,7 @@ export class Publish {
             const user = window.zatsuite.store.getters.user;
             console.log(channel.name, user);
             channel.publish('leave', user);
+            channel.detach();
         }
     }
     static welcome(user) {

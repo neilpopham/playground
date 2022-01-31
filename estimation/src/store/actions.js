@@ -25,6 +25,12 @@ export default {
         console.log('leave');
         commit('leave');
     },
+    join({ commit }, session) {
+        console.log('join', session);
+        commit('session', session);
+        Subscribe.session();
+        Publish.join();
+    },
     session({ commit }, session) {
         console.log('session');
         commit('session', session);
