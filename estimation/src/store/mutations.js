@@ -80,6 +80,7 @@ export default {
     },
     join(state, session) {
     	state.session = session;
+    	state.state = STATE.ESTIMATING;
     	state.session.state = STATE.ESTIMATING;
     	const user = getters.user(state);
     	user.session = { [session.slug]: {} };

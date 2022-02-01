@@ -1,5 +1,5 @@
 // Personal
-const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');n
+const ably = new Ably.Realtime('BK-x-Q.xD_6DA:sf6kT_w5v13W99KZMx8WFkepoZ-Ho5RcPA0__YDwFzc');
 
 // Unity 5
 // var ably = new Ably.Realtime('0cEZ1Q.S0oWpQ:9T9K8HUX7Sk5FF07Yj0cagRKhzmATCWa1Ynl9EwLaEg');

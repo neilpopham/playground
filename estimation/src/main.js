@@ -7,27 +7,28 @@ import './index.css'
 
 window.zatsuite = { store: store };
 
-const app = createApp(App);
-app.use(store);
-const vm = app.mount('#app');
-
-console.log(window.location.hash);
-
 const USER_VERSION = 1;
 let user = localStorage.getItem('user');
 if (user != null) {
     user = JSON.parse(localStorage.getItem('user'));
 }
+console.log(user);
 if ((user == null) || (user.version == undefined) || (user.version != USER_VERSION)) {
     user = {
         version: USER_VERSION,
         uuid: getUuid(),
         name: getUuid(),
         session: {},
-        role: store.state.roles[1],
+        //role: store.state.roles[1],
     }
 }
 store.commit('add', user);
+
+const app = createApp(App);
+app.use(store);
+const vm = app.mount('#app');
+
+console.log(window.location.hash);
 
 window.addEventListener("beforeunload", (e) => {
     store.dispatch('save');
@@ -40,5 +41,3 @@ if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.match
 } else {
     document.documentElement.classList.remove('dark')
 }
-
-localStorage.theme = 'dark';
