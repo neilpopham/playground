@@ -2,7 +2,7 @@
 // @name         Twitch Stream Auto-Watch
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
 // @version      0.1
-// @description  Auto-Watches a stream that is offline on load, as soon as it goes online.
+// @description  Auto-Watches a stream that is offline on page load, as soon as it goes online.
 // @author       @Synthetic
 // @license      MIT
 // @match        https://www.twitch.tv/*
@@ -40,11 +40,17 @@
             const offline = document.querySelectorAll(STATUS_OFFLINE);
             if (offline.length) {
                 clearTimeout(timeout);
+                if (!waiting) {
+                    console.log('Stream is offline. Waiting');
+                    waiting = true;                    
+                }
             }            
             const online = document.querySelectorAll(STATUS_LIVE);
             if (online.length) {
+                console.log('Stream is online');
                 if (clickWatch()) {
                     observer.disconnect();
+                    console.log('Watching');
                 }
             }
         })
@@ -52,6 +58,7 @@
 
     console.log('Loaded at', new Date());
 
+    var waiting = false;
     var timeout = window.setTimeout(
         () => {
             observer.disconnect();
@@ -61,30 +68,5 @@
 
     var observer = new MutationObserver(onMutate);
     observer.observe(document.body, { childList: true, subtree: true });
-    
+
 })();
-
-/*
-BEFORE CHANNEL LIVE
-
-<div class="Layout-sc-1xcs6mc-0 dyQMib"><div class="Layout-sc-1xcs6mc-0 dDjFoM channel-status-info channel-status-info--offline"><p class="CoreText-sc-1txzju1-0 jiQuvm">Offline</p></div></div>
-
-<div class="Layout-sc-1xcs6mc-0 dDjFoM channel-status-info channel-status-info--offline"><p class="CoreText-sc-1txzju1-0 jiQuvm">Offline</p></div>
-
-document.querySelectorAll('.channel-status-info');
-
-NOTIFICATIONS ON
-<p class="CoreText-sc-1txzju1-0 cvIbSB">You will be notified when RocketLeagueMENA is live</p>
-
-NOTIFICATIONS OFF
-<div data-a-target="tw-core-button-label-text" class="Layout-sc-1xcs6mc-0 phMMp">Turn on Notifications</div>
-
-
-AFTER LIVE
-
-<div class="Layout-sc-1xcs6mc-0 dDjFoM channel-status-info channel-status-info--live"><p class="CoreText-sc-1txzju1-0 jiQuvm">Live Now</p></div>
-
-<div class="Layout-sc-1xcs6mc-0"><span class="CoreText-sc-1txzju1-0 hfMGmo"><div class="Layout-sc-1xcs6mc-0 kPXfEJ"><a data-a-target="home-live-overlay-button" class="ScCoreLink-sc-16kq0mq-0 jSrrlW tw-link" href="/rocketleaguemena">Watch now with&nbsp;<span class="ScAnimatedNumber-sc-1iib0w9-0 gPFBFp">2K</span>&nbsp;viewers</a></div></span></div>
-
-
-*/
