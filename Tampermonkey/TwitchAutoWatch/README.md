@@ -1,1 +1,1 @@
-Will watch a channel page until it goes live and then click the link to watch. 
+If the script discovers a channel that is currently offline it will wait until it goes online, and then click the Watch link.
