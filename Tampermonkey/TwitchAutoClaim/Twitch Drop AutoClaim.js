@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.4
+// @version      0.5
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.4;
+    const VERSION = 0.5;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
@@ -65,7 +65,6 @@
      */
     const getPrevious = () => {
         var previous = GM_getValue('previous');
-        console.log(previous); // ####
         if (typeof previous == 'undefined' || previous == false) {
             return false;
         }
@@ -74,7 +73,6 @@
         } catch (e) {
             return false;
         }
-        console.log(previous); // ####
         if (typeof previous.version == 'undefined') {
             previous.version = typeof previous.start == 'undefined' ? 0.1 : 0.2;
         }
@@ -114,7 +112,6 @@
                 fixed = r;
             }
         });
-        console.log('Rate', rate, '=>', fixed, fixed/rate); // ###
         return fixed;
     };
 
@@ -149,6 +146,7 @@
 
     /**
      * Runs when the dom updates, used to gain access to the progress bars, when they finally load.
+     * Contains all the code to calculate refresh
      *
      * @param  array mutationsList The list of mutations.
      * @return void
@@ -179,17 +177,16 @@
             } else {
                 var rate;
                 if (previous) {
-                    var increase = progress - previous.base.progress;
-                    if (increase < 1) {
+                    const increase = progress - previous.base.progress;
+                    const actual = progress - previous.last.progress;
+                    if (actual < 1) {
                         previous = false;
                     } else {
                         rate = fixedRate(Math.ceil(interval / increase));
                         if (previous.last.expected) {
-                            const actual = progress - previous.last.progress;
                             console.log('Expected increase of', previous.last.expected, 'Actual is', actual)
                             if (previous.last.expected == actual) {
                                 var diff = Math.floor((rate * previous.base.offset) * 1000);
-                                console.log(diff);
                                 previous.base.time -= diff;
                             }
                             previous.base.offset /= 2;
@@ -218,17 +215,16 @@
 
                 console.log('Rate', rate);
                 refresh = (100 - progress) * rate;
-                console.log('Refresh', refresh);
 
                 previous.last.expected = null;
-                if (increase) {
+                if (actual) {
                     if (refresh < MAX_REFRESH) {
                         var p = Math.min(100, previous.base.progress + (interval / rate));
                         refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
                         console.log('Accurate progress', p);
                     } else if (previous.base.offset > 0) {
                         previous.last.expected = Math.floor(MAX_REFRESH / rate);
-                        refresh = Math.ceil((previous.last.expected * rate) - (rate * previous.base.offset));
+                        refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
                     } else {
                         refresh = MAX_REFRESH;
                     }
@@ -249,7 +245,6 @@
             previous.last.time = NOW;
             previous.last.progress = progress;
 
-            console.log(previous); // ####
             GM_setValue('previous', JSON.stringify(previous));
             setTimer(refresh);
         });
