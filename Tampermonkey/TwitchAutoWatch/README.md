@@ -1,0 +1,1 @@
+Will watch a channel page until it goes live and then click the link to watch. 
