@@ -6,10 +6,10 @@ A minimum refresh rate is used, as the longer the timeframe the more accurate th
 
 On a 4hr drop it will take 144s for the progress to increase 1%. So, when loading the inventory page it may be 144s until the next change, or 1s. In an attempt to work out when the initial progress value actually changed the script will set different refresh periods, and reduce the base time where possible.
 
-When the script calculates that the next refresh should allow it to claim the drop, it will attempt to calculate the final refresh accurately, using the information at its disposal.
+When the script calculates that the next refresh should allow it to claim the drop, it will use the stored base time, the progress rate, and the seconds elapsed, to calculate the time remaining as accurately as possible.
 
 In this manner the script will limit the page refreshes it makes, so as not to trigger bot detection, which I was experiencing with other scripts. It should also claim the drop soon after it is available, as it has previously approximated when the progress will reach 100%.
 
 The script relies on knowing that there was a start time and progress value, and that the progress will increase on each refresh. If there is no increase it will start over, as it cannot perform it's calculations otherwise. Therefore, it is best left alone, unless you choose to reset it, with two quick manual refreshes. 
 
-Check the console for some relevant information.
+Please refer to the console for some relevant information.
