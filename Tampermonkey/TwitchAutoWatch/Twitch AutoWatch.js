@@ -42,7 +42,7 @@
                 clearTimeout(timeout);
                 if (!waiting) {
                     console.log('Stream is offline. Waiting');
-                    waiting = true;                    
+                    waiting = true;
                 }
             }            
             const online = document.querySelectorAll(STATUS_LIVE);

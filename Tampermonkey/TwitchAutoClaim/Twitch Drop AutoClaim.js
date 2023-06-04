@@ -137,7 +137,7 @@
     /**
      * Clicks the Claim button.
      *
-     * @return boolean     
+     * @return boolean
      */
     const claimDrop = () => {
         if (document.querySelector(CLAIM_DROP)) {
@@ -151,7 +151,7 @@
      * Runs when the dom updates, used to gain access to the progress bars, when they finally load.
      *
      * @param  array mutationsList The list of mutations.
-     * @return void      
+     * @return void
      */
     const onMutate = function(mutationsList) {
         mutationsList.forEach(mutation => {
@@ -172,7 +172,7 @@
                 if (claimDrop()) {
                     console.log('Drop claimed!');
                     refresh = THIRTY_RATE * 100;
-                    progress = 0;                      
+                    progress = 0;
                 } else {
                     refresh = THIRTY_RATE;
                 }
@@ -186,7 +186,7 @@
                         rate = fixedRate(Math.ceil(interval / increase));
                         if (previous.last.expected) {
                             const actual = progress - previous.last.progress;
-                            console.log('expected', previous.last.expected, 'actual', actual)
+                            console.log('Expected increase of', previous.last.expected, 'Actual is', actual)
                             if (previous.last.expected == actual) {
                                 var diff = Math.floor((rate * previous.base.offset) * 1000);
                                 console.log(diff);
@@ -196,7 +196,7 @@
                             if (previous.base.offset < 0.01) {
                                 previous.base.offset = 0;
                             }
-                        }                                
+                        }
                     }
                 }
                 if (!previous) {
@@ -225,13 +225,13 @@
                     if (refresh < MAX_REFRESH) {
                         var p = Math.min(100, previous.base.progress + (interval / rate));
                         refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
-                        console.log('p', p);                         
+                        console.log('Accurate progress', p);
                     } else if (previous.base.offset > 0) {
                         previous.last.expected = Math.floor(MAX_REFRESH / rate);
                         refresh = Math.ceil((previous.last.expected * rate) - (rate * previous.base.offset));
                     } else {
                         refresh = MAX_REFRESH;
-                    }           
+                    }
                 }
 
                 console.log('Refresh', refresh);
@@ -243,7 +243,7 @@
                     progress: 0,
                     offset: 0,
                 };
-                previous.last.expected = null;                           
+                previous.last.expected = null;
             }
 
             previous.last.time = NOW;
