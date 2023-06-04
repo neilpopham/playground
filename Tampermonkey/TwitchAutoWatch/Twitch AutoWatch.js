@@ -23,7 +23,7 @@
     const WATCH_NOW = '[data-a-target="home-live-overlay-button"]';
 
     /**
-     * Clicks the Claim button.
+     * Clicks the Watch link.
      *
      * @return boolean     
      */
