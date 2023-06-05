@@ -2,7 +2,7 @@ The first time the script finds a progress bar it will record the current time a
 
 Following a refresh, the script will use the initial time and progress, along with the current time and progress, to calculate the actual rate of the drop, and will calculate the next refresh accordingly.
 
-A minimum refresh rate is used, as the longer the timeframe the more accurate the script can calculate when 100% will be reached.
+A minimum refresh time is used, as the longer the timeframe the more accurate the script can calculate when 100% will be reached. Therefore on a 4hr drop the script will still refresh a small number of times, attempting to improve accuracy on each refresh.
 
 On a 4hr drop it will take 144s for the progress to increase 1%. So, when loading the inventory page it may be 144s until the next change, or 1s. In an attempt to work out when the initial progress value actually changed the script will set different refresh periods, and reduce the base time where possible.
 

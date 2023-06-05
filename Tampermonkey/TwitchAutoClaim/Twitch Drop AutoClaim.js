@@ -276,7 +276,7 @@
     if (previous) {
         console.log('Baseline', new Date(previous.base.time));
         console.log('Last seen', new Date(previous.last.time));
-        interval.base = {
+        interval = {
             base: (NOW - previous.base.time) / 1000,
             last: (NOW - previous.last.time) / 1000
         }
