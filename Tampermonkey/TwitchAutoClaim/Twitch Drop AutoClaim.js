@@ -177,15 +177,30 @@
             } else {
                 var rate;
                 if (previous) {
-                    const increase = progress - previous.base.progress;
-                    const actual = progress - previous.last.progress;
-                    if (actual < 1) {
+                    const increase = {
+                        base: progress - previous.base.progress,
+                        last: progress - previous.last.progress,
+                    }
+                    if (increase.last == 0) {
+                        /**
+                         * Unused code to ignore a quick refresh.
+                         * I think a manual refresh to reset may be useful sometimes
+                         * i.e: If the script gets confused for some unknown reason
+                         */
+                        // if (interval.last > previous.last.rate) {
+                        //     previous = false;
+                        // } else {
+                        //     previous.last.expected = null;
+                        // }
                         previous = false;
-                    } else {
-                        rate = fixedRate(Math.ceil(interval / increase));
+                    } elseif (increase.last < 1) {
+                        previous = false;
+                    }
+                    if (previous) {
+                        rate = fixedRate(Math.ceil(interval.base / increase.base));
                         if (previous.last.expected) {
-                            console.log('Expected increase of', previous.last.expected, 'Actual is', actual)
-                            if (previous.last.expected == actual) {
+                            console.log('Expected increase of', previous.last.expected, 'Actual is', increase.last)
+                            if (previous.last.expected == increase.last) {
                                 var diff = Math.floor((rate * previous.base.offset) * 1000);
                                 previous.base.time -= diff;
                             }
@@ -217,9 +232,9 @@
                 refresh = (100 - progress) * rate;
 
                 previous.last.expected = null;
-                if (actual) {
+                if (previous) {
                     if (refresh < MAX_REFRESH) {
-                        var p = Math.min(100, previous.base.progress + (interval / rate));
+                        var p = Math.min(100, previous.base.progress + (interval.base / rate));
                         refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
                         console.log('Accurate progress', p);
                     } else if (previous.base.offset > 0) {
@@ -244,6 +259,7 @@
 
             previous.last.time = NOW;
             previous.last.progress = progress;
+            previous.last.rate = rate;
 
             GM_setValue('previous', JSON.stringify(previous));
             setTimer(refresh);
@@ -260,9 +276,12 @@
     if (previous) {
         console.log('Baseline', new Date(previous.base.time));
         console.log('Last seen', new Date(previous.last.time));
-        interval = (NOW - previous.base.time) / 1000;
-        console.log('Interval', Math.round(interval));
-        if (interval > THRESHOLD) {
+        interval.base = {
+            base: (NOW - previous.base.time) / 1000,
+            last: (NOW - previous.last.time) / 1000
+        }
+        console.log('Interval', Math.round(interval.base));
+        if (interval.base > THRESHOLD) {
             previous = false;
             console.log('Interval is too large');
         }
@@ -272,6 +291,7 @@
         console.log('No relevant read');
     }
 
+    // If we can't find a progress bar after 10s this will set a refesh
     timeout = window.setTimeout(
         () => {
             GM_setValue('previous', false);
