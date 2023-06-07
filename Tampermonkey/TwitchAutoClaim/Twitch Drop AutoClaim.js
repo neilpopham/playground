@@ -181,25 +181,13 @@
                         base: progress - previous.base.progress,
                         last: progress - previous.last.progress,
                     }
-                    if (increase.last == 0) {
-                        /**
-                         * Unused code to ignore a quick refresh.
-                         * I think a manual refresh to reset may be useful sometimes
-                         * i.e: If the script gets confused for some unknown reason
-                         */
-                        // if (interval.last > previous.last.rate) {
-                        //     previous = false;
-                        // } else {
-                        //     previous.last.expected = null;
-                        // }
+                    if (increase.last < 1) {
                         previous = false;
-                    } elseif (increase.last < 1) {
-                        previous = false;
-                    }
-                    if (previous) {
+                    } else {
                         rate = fixedRate(Math.ceil(interval.base / increase.base));
                         if (previous.last.expected) {
-                            console.log('Expected increase of', previous.last.expected, 'Actual is', increase.last)
+                            console.log('Expected increase of', previous.last.expected, '%');
+                            console.log('Actual increase is', increase.last, '%')
                             if (previous.last.expected == increase.last) {
                                 var diff = Math.floor((rate * previous.base.offset) * 1000);
                                 previous.base.time -= diff;
@@ -281,7 +269,7 @@
             last: (NOW - previous.last.time) / 1000
         }
         console.log('Interval', Math.round(interval.base));
-        if (interval.base > THRESHOLD) {
+        if (interval.base > THRESHOLD || interval.last > MAX_REFRESH + 10) {
             previous = false;
             console.log('Interval is too large');
         }
