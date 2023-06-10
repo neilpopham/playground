@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.5
+// @version      0.6
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.5;
+    const VERSION = 0.6;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
@@ -57,6 +57,51 @@
      * This buffer is used to try to ensure we are just over rather than just under.
      */
     const TIME_BUFFER = 10; // seconds
+
+    /**
+     * Dumps an object to the console.
+     * 
+     * @param  object o The object to dump.
+     * @return void
+     */
+    const dump = (o) => {
+        for (var p in o) {        
+            if (typeof o[p] == 'object') {
+                console.group(p);
+                    for (var s in o[p]) {
+                        console.log(s, o[p][s])
+                    }
+                console.groupEnd();
+            } else {
+                console.log(p, o[p]);
+            }
+        }
+    }    
+
+    /**
+     * Returns the base storage object.
+     * 
+     * @return object
+     */
+    const getDefaults = () => {
+        return JSON.parse(
+            JSON.stringify(
+                {
+                    base: {
+                        time: null,
+                        progress: null,
+                        offset: null,
+                    },
+                    last: {
+                        time: null,
+                        progress: null,
+                        expected: null,
+                    },
+                    version: VERSION
+                }
+            )
+        );
+    }
 
     /**
      * Retrieves stored data
@@ -123,6 +168,7 @@
      */
     const setTimer = (refresh) => {
         console.log('Setting refresh of', refresh, 'seconds');
+        console.log('Next load', new Date(NOW + refresh * 1000));
         window.setTimeout(
             () => {
                 window.location.reload();
@@ -146,116 +192,103 @@
 
     /**
      * Runs when the dom updates, used to gain access to the progress bars, when they finally load.
-     * Contains all the code to calculate refresh
+     * Contains all the logic used to calculate the page refresh.
      *
      * @param  array mutationsList The list of mutations.
      * @return void
      */
-    const onMutate = function(mutationsList) {
-        mutationsList.forEach(mutation => {
-            if (refresh != null) {
-                return;
-            }
-            const nodes = document.querySelectorAll(PROGRESS_BAR);
-            if (!nodes.length) {
-                return;
-            }
-            clearTimeout(timeout);
-            var progress = 0;
-            for (var i = 0; i < nodes.length; i++) {
-                progress = Math.max(progress, nodes[i].getAttribute('value'));
-            }
-            console.log('Progress', progress);
-            if (progress == 100) {
-                if (claimDrop()) {
-                    console.log('Drop claimed!');
-                    refresh = THIRTY_RATE * 100;
-                    progress = 0;
-                } else {
-                    refresh = THIRTY_RATE;
-                }
-            } else {
-                var rate;
-                if (previous) {
-                    const increase = {
-                        base: progress - previous.base.progress,
-                        last: progress - previous.last.progress,
-                    }
-                    if (increase.last < 1) {
-                        previous = false;
-                    } else {
-                        rate = fixedRate(Math.ceil(interval.base / increase.base));
-                        if (previous.last.expected) {
-                            console.log('Expected increase of', previous.last.expected, '%');
-                            console.log('Actual increase is', increase.last, '%')
-                            if (previous.last.expected == increase.last) {
-                                var diff = Math.floor((rate * previous.base.offset) * 1000);
-                                previous.base.time -= diff;
-                            }
-                            previous.base.offset /= 2;
-                            if (previous.base.offset < 0.01) {
-                                previous.base.offset = 0;
-                            }
-                        }
-                    }
-                }
+    const onMutate = (mutationsList) => {
+        if (refresh != null) {
+            return;
+        }
+        const nodes = document.querySelectorAll(PROGRESS_BAR);
+        if (!nodes.length) {
+            return;
+        }
+        clearTimeout(timeout);
+        var progress = 0;
+        for (var i = 0; i < nodes.length; i++) {
+            progress = Math.max(progress, nodes[i].getAttribute('value'));
+        }
+        console.log('Progress', progress);
+        var rate;
+        if (progress == 100) {
+            rate = THIRTY_RATE;
+            if (claimDrop()) {
+                console.log('Drop claimed!');
+                refresh = rate * 100;
+                progress = 0;
                 if (!previous) {
-                    rate = THIRTY_RATE;
-                    previous = {
-                        base: {
-                            time: NOW,
-                            progress: progress,
-                            offset: 0.5,
-                        },
-                        last: {
-                            time: null,
-                            progress: null,
-                            expected: null,
-                        },
-                        version: VERSION
-                    };
+                    previous = getDefaults();
                 }
-
-                console.log('Rate', rate);
-                refresh = (100 - progress) * rate;
-
-                previous.last.expected = null;
-                if (previous) {
-                    if (refresh < MAX_REFRESH) {
-                        var p = Math.min(100, previous.base.progress + (interval.base / rate));
-                        refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
-                        console.log('Accurate progress', p);
-                    } else if (previous.base.offset > 0) {
-                        previous.last.expected = Math.floor(MAX_REFRESH / rate);
-                        refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
-                    } else {
-                        refresh = MAX_REFRESH;
-                    }
-                }
-
-                console.log('Refresh', refresh);
-            }
-
-            if (progress == 0) {
                 previous.base = {
                     time: NOW,
                     progress: 0,
                     offset: 0,
                 };
-                previous.last.expected = null;
+                previous.last.expected = null;                    
+            } else {
+                refresh = rate;
             }
+        } else {
+            if (previous) {
+                const increase = {
+                    base: progress - previous.base.progress,
+                    last: progress - previous.last.progress,
+                }
+                if (increase.last < 1) {
+                    previous = false;
+                    console.log('No increase since last load, resetting data')
+                } else {
+                    rate = fixedRate(Math.ceil(interval.base / increase.base));
+                    if (previous.last.expected) {
+                        console.log('Expected increase of', previous.last.expected, '%');
+                        console.log('Actual increase is', increase.last, '%')
+                        if (previous.last.expected == increase.last) {
+                            var diff = Math.floor((rate * previous.base.offset) * 1000);
+                            previous.base.time -= diff;
+                        }
+                        previous.base.offset /= 2;
+                        if (previous.base.offset < 0.01) {
+                            previous.base.offset = 0;
+                        }
+                    }
+                }
+            }
+            if (!previous) {
+                rate = THIRTY_RATE;
+                previous = getDefaults();
+                previous.base = {
+                    time: NOW,
+                    progress: progress,
+                    offset: 0.5,
+                };
+            }
+            console.log('Rate', rate);
+            refresh = (100 - progress) * rate;
+            previous.last.expected = null;
+            if (previous.last.progress !== null) {
+                if (refresh < MAX_REFRESH) {
+                    var p = Math.min(100, previous.base.progress + (interval.base / rate));
+                    refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
+                    console.log('Accurate progress', p);
+                } else if (previous.base.offset > 0) {
+                    previous.last.expected = Math.floor(MAX_REFRESH / rate);
+                    refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
+                }
+            }
+            refresh = Math.min(refresh, MAX_REFRESH);
+            console.log('Refresh', refresh);
+        }
 
-            previous.last.time = NOW;
-            previous.last.progress = progress;
-            previous.last.rate = rate;
-
-            GM_setValue('previous', JSON.stringify(previous));
-            setTimer(refresh);
-        });
+        previous.last.time = NOW;
+        previous.last.progress = progress;
+        previous.last.rate = rate;
+        GM_setValue('previous', JSON.stringify(previous));
+        setTimer(refresh);
     };
 
     console.log('Loaded at', new Date());
-
     var timeout;
     var refresh = null;
     var interval;
@@ -269,7 +302,7 @@
             last: (NOW - previous.last.time) / 1000
         }
         console.log('Interval', Math.round(interval.base));
-        if (interval.base > THRESHOLD || interval.last > MAX_REFRESH + 10) {
+        if ((interval.base > THRESHOLD) || (interval.last > MAX_REFRESH + 30)) {
             previous = false;
             console.log('Interval is too large');
         }

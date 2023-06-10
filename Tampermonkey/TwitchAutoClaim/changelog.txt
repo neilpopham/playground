@@ -1,0 +1,23 @@
+0.6
+* Don't bother looping through mutations.
+* Don't deduct offset from refresh if there was no previous progress.
+* Increased buffer on last interval check from 10s to 30s.
+* Only set base.offset to 0 when claiming, not on all 0% reads.
+* Ensure we have a previous object on claiming, we may have just happened on 100% immediately.
+* Fixed a truthy bug checking last.progress. Now testing against null.
+
+0.5
+* Minor code refactor and removed some console logging.
+
+0.4
+* Now uses a fixed rate based on the rate calculated.
+* Now more fussy about progress increase. If no increase between refreshes the script will start from scratch.
+* From the second refresh on, the script attempts to decrease the base timestamp, in an attempt to most accurately calculate the exact start time, and therefore the time at which the progress will reach 100%.
+
+0.3
+* Fixed bug where starting progress was not recorded on first read.
+
+0.2
+* Fixed bug with rate calculation, which was using the difference in progress since last load, not since first read.
+* Changed minimum refresh amount from 1hr to 30m while testing. It may increase to 1hr again in the future.
+* Now using MIN_REFRESH constant for minimum refresh amount (in seconds).
