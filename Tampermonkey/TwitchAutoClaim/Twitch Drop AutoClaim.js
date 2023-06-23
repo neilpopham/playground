@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.6
+// @version      0.7
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.6;
+    const VERSION = 0.7;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
@@ -59,24 +59,31 @@
     const TIME_BUFFER = 10; // seconds
 
     /**
+     * A buffer to add when checking expected refresh times.
+     *
+     * Even though we set a refresh of a specific interval the difference
+     * between load times will not exactly match that figure, so we use this buffer
+     * when checking whether the load time is expected.
+     */
+     const REFRESH_BUFFER = 30; // seconds
+
+    /**
      * Dumps an object to the console.
      * 
      * @param  object o The object to dump.
      * @return void
      */
     const dump = (o) => {
-        for (var p in o) {        
-            if (typeof o[p] == 'object') {
+        for (var p in o) {
+            if ((o[p] != null) && (typeof o[p] == 'object')) {
                 console.group(p);
-                    for (var s in o[p]) {
-                        console.log(s, o[p][s])
-                    }
+                    dump(o[p]);
                 console.groupEnd();
             } else {
                 console.log(p, o[p]);
             }
         }
-    }    
+    }
 
     /**
      * Returns the base storage object.
@@ -168,7 +175,7 @@
      */
     const setTimer = (refresh) => {
         console.log('Setting refresh of', refresh, 'seconds');
-        console.log('Next load', new Date(NOW + refresh * 1000));
+        console.log('Next load', new Date((new Date()).getTime() + refresh * 1000));
         window.setTimeout(
             () => {
                 window.location.reload();
@@ -218,15 +225,12 @@
                 console.log('Drop claimed!');
                 refresh = rate * 100;
                 progress = 0;
-                if (!previous) {
-                    previous = getDefaults();
-                }
+                previous = getDefaults();
                 previous.base = {
-                    time: NOW,
+                    time: (new Date()).getTime(),
                     progress: 0,
                     offset: 0,
                 };
-                previous.last.expected = null;                    
             } else {
                 refresh = rate;
             }
@@ -242,15 +246,31 @@
                 } else {
                     rate = fixedRate(Math.ceil(interval.base / increase.base));
                     if (previous.last.expected) {
-                        console.log('Expected increase of', previous.last.expected, '%');
-                        console.log('Actual increase is', increase.last, '%')
+                        var reduce = true;
+                        var diff = 0;
+                        console.log('Expected increase of', previous.last.expected);
+                        console.log('Actual increase is', increase.last)
                         if (previous.last.expected == increase.last) {
-                            var diff = Math.floor((rate * previous.base.offset) * 1000);
-                            previous.base.time -= diff;
+                            diff = Math.floor(previous.last.rate * previous.base.offset);
+                        } else if (Math.abs(interval.last - previous.last.refresh) > REFRESH_BUFFER) {
+                            console.log('Not a full refesh');
+                            const expected = Math.floor(interval.last / rate);
+                            console.log('New expected increase of', expected);
+                            if (increase.last > expected) {
+                                diff = interval.last - expected * rate;
+                            } else {
+                                reduce = increase.last < expected;
+                            }
                         }
-                        previous.base.offset /= 2;
-                        if (previous.base.offset < 0.01) {
-                            previous.base.offset = 0;
+                        if (diff > 0) {
+                            console.log('Reduced base time by', diff, 'seconds');
+                            previous.base.time -= diff * 1000;
+                        }
+                        if (reduce) {
+                            previous.base.offset /= 2;
+                            if (previous.base.offset < 0.01) {
+                                previous.base.offset = 0;
+                            }
                         }
                     }
                 }
@@ -270,8 +290,12 @@
             if (previous.last.progress !== null) {
                 if (refresh < MAX_REFRESH) {
                     var p = Math.min(100, previous.base.progress + (interval.base / rate));
-                    refresh = Math.ceil((100 - p) * rate) + TIME_BUFFER;
-                    console.log('Accurate progress', p);
+                    console.log('Accurate progress', p.toFixed(3));
+                    // NOTE:
+                    // Sometimes p > progress
+                    // Do we rely on time/rate (p), and assume ui has not been updated recently, or:
+                    // p = Math.min(p, progress + 0.5);
+                    refresh = Math.max(rate, Math.ceil((100 - p) * rate) + TIME_BUFFER);
                 } else if (previous.base.offset > 0) {
                     previous.last.expected = Math.floor(MAX_REFRESH / rate);
                     refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
@@ -284,6 +308,8 @@
         previous.last.time = NOW;
         previous.last.progress = progress;
         previous.last.rate = rate;
+        previous.last.refresh = refresh;
+        dump(previous); // ####################################################################
         GM_setValue('previous', JSON.stringify(previous));
         setTimer(refresh);
     };
@@ -293,16 +319,17 @@
     var refresh = null;
     var interval;
     var previous = getPrevious();
+    dump(previous); // ####################################################################
 
     if (previous) {
         console.log('Baseline', new Date(previous.base.time));
         console.log('Last seen', new Date(previous.last.time));
         interval = {
-            base: (NOW - previous.base.time) / 1000,
-            last: (NOW - previous.last.time) / 1000
+            base: Math.round((NOW - previous.base.time) / 1000),
+            last: Math.round((NOW - previous.last.time) / 1000)
         }
-        console.log('Interval', Math.round(interval.base));
-        if ((interval.base > THRESHOLD) || (interval.last > MAX_REFRESH + 30)) {
+        console.log('Interval', interval.base);
+        if ((interval.base > THRESHOLD) || (interval.last > MAX_REFRESH + REFRESH_BUFFER)) {
             previous = false;
             console.log('Interval is too large');
         }

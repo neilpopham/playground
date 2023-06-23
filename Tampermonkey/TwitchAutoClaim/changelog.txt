@@ -1,3 +1,8 @@
+0.7
+* Use current time, not this load time, to report next load time.
+* Set minimum refresh using calculated rate.
+* Check for manual refresh when testing expected increase. 
+
 0.6
 * Don't bother looping through mutations.
 * Don't deduct offset from refresh if there was no previous progress.
