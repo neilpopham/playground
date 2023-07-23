@@ -1,0 +1,171 @@
+const WebSocket = require('ws');
+const http = require('http');
+const fs = require('fs');
+const ChannelManager = require('./channels.js');
+
+const wss = new WebSocket.Server({ port: 7071 });
+const clients = new Map();
+const channels = new ChannelManager();
+
+wss.on('connection', (ws) => {
+    const id = uuidv4();
+    const color = Math.floor(Math.random() * 360);
+    const metadata = { id, color };
+
+    clients.set(ws, metadata);
+
+    channels.channel('_everyone').subscribe(ws);
+    console.log(channels.channel('_everyone').count());
+
+    // channels.channel('test').subscribe(ws, ['one', 'two']); // subscribe to test:one & test:two
+    // channels.channel('test').subscribe(ws); // subscribe to test
+    // channels.channel('test').event('three').subscribe(ws); // subscribe to test:three
+
+    ws.on('message', (messageAsString) => {
+      const message = JSON.parse(messageAsString);
+      const metadata = clients.get(ws);
+
+      if (message.action == 'subscribe') {
+        if (message.event) {
+          channels.channel(message.channel).event(message.event).subscribe(ws);
+        } else {
+          channels.channel(message.channel).subscribe(ws);
+        }
+      }
+
+      if (message.action == 'unsubscribe') {
+        if (message.event) {
+          channels.channel(message.channel).event(message.event).unsubscribe(ws);
+        } else {
+          channels.channel(message.channel).unsubscribe(ws);
+        }
+      }
+
+      message.sender = metadata.id;
+      message.color = metadata.color;
+
+      [...clients.keys()].forEach((client) => {
+        client.send(JSON.stringify(message));
+      });
+
+      // channels.channel('test').event('one').publish({'msg': 'test one'});
+      // channels.channel('test').publish({'msg': 'test'});
+    });
+
+    ws.on('close', (code) => {
+      clients.delete(ws);
+      channels.unsubscribe(ws);
+      console.log(channels.channel('_everyone').count());
+      // [...clients.keys()].forEach((client) => {
+      //   client.send('Client disconnected, remaining: ' + clients.size);
+      // });
+    });
+});
+
+// wss.on("close", () => {
+//   clients.delete(ws);
+// });
+
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+/**
+ * API
+ */
+http.createServer(function (req, res) {
+  // res.writeHead(200, {'Content-Type': 'text/plain'});
+  // res.write('Hello World!');
+  // res.end();
+
+  // res.end(req.url);
+
+  // if (req.method != 'POST') {
+  //   res.statusCode = 405;
+  //   res.end(JSON.stringify({ error: true, message: 'Method not allowed' }));
+  //   return;
+  // }
+
+  if (req.url == '/favicon.ico') {
+    res.statusCode = 404;
+    res.end();
+    return;
+  }
+
+  if (req.url == '/ping') {
+    [...clients.keys()].forEach((client) => {
+      client.send('ping');
+    });
+    res.statusCode = 200;
+    res.end(JSON.stringify({ error: false }));
+    return;
+  }
+
+  const section = req.url.substring(1).split('/');
+  // console.log(section);
+
+  console.log(req.method, req.url, section.join(','));
+  let body = '';
+  req.on('data', (chunk) => {
+      body += chunk;
+  });
+  req.on('end', () => {
+    // [...clients.keys()].forEach((client) => {
+    //   client.send('ping');
+    // });
+
+    // const message = JSON.parse(body);
+    // console.log(body);
+
+    if (section.length) {
+      if (section.length > 1) {
+        channels
+          .channel(section[0])
+          .event(section[1])
+          .publish({ channel: section[0], event: section[1] });
+      } else {
+        channels
+          .channel(section[0])
+          .publish({ channel: section[0] });
+      }
+    }
+
+    [...clients.keys()].forEach((client) => {
+      client.send(JSON.stringify(channels.subs(client)));
+    });
+
+    res.write(JSON.stringify({ status: 200 }));
+    res.end();
+
+  });
+
+}).listen(7072);
+
+/**
+ * Webserver
+ */
+http.createServer(function (req, res) {
+  if (req.url == '/') {
+    fs.readFile('./index.html', function(error, content) {
+        if (error) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(content, 'utf-8');
+        }
+    });
+  } else {
+    res.statusCode = 404;
+    res.end();
+    return;
+  }
+}).listen(7073);
+
+console.log('websocket server running on port', 7071);
+console.log('api running on port', 7072);
+console.log('webserver running on port', 7073);
