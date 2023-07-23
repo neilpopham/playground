@@ -8,6 +8,8 @@ const clients = new Map();
 const channels = new ChannelManager();
 
 wss.on('connection', (ws) => {
+    ws.isAlive = true;
+
     const id = uuidv4();
     const metadata = { id };
 
@@ -48,7 +50,27 @@ wss.on('connection', (ws) => {
         channels.unsubscribe(ws);
         console.log(channels.channel('_everyone').count());
     });
+
+    ws.on('pong', heartbeat);
 });
+
+const interval = setInterval(function ping() {
+    wss.clients.forEach(function each(ws) {
+        if (ws.isAlive === false) {
+            return ws.terminate();
+        }
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
+
+wss.on('close', function close() {
+    clearInterval(interval);
+});
+
+function heartbeat() {
+  this.isAlive = true;
+}
 
 function uuidv4() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
