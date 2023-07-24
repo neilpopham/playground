@@ -1,8 +1,9 @@
 const Event = require('./event.js');
 
 module.exports = class Channel {
-    constructor (name) {
+    constructor (name, manager) {
         this.name = name;
+        this.manager = manager;
         this.members = new Map();
         this.events = new Map();
     }
@@ -27,18 +28,24 @@ module.exports = class Channel {
 
     unsubscribe (member, events = null) {
         if (events === null) {
-            this.members.delete(member);
-            return;
+            return this.remove(member);
         }
         const meta = this.members.get(member);
         events.forEach((name) => {
              meta.events.delete(name);
         });
         if (meta.events.size == 0) {
-            this.members.delete(member);
-            return;
+            return this.remove(member);
         }
         this.members.set(member, meta);
+    }
+
+    remove (member) {
+        this.members.delete(member);
+        if (this.members.size == 0) {
+            this.manager.remove(this.name);
+        }
+        return;
     }
 
     event (name) {
@@ -59,7 +66,7 @@ module.exports = class Channel {
             // If we are publishing to /channel then send regardless
             } else if (event === null) {
                 send = true;
-            // If we are publishing to /channel/event and the member is subscribed
+            // If we are publishing to /channel/event check that the member is subscribed
             } else if (meta.events.has(event)) {
                 send = true;
             }

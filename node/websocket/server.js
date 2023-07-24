@@ -101,19 +101,10 @@ http.createServer(function (req, res) {
         return;
     }
 
-    if (req.url == '/ping') {
-        [...clients.keys()].forEach((client) => {
-            client.send('ping');
-        });
-        res.statusCode = 200;
-        res.end(JSON.stringify({ error: false }));
-        return;
-    }
-
-    const section = req.url.substring(1).split('/');
+    const section = req.url.replace(/(^\/+|\/+$)/g, '').split('/');
     // console.log(section);
 
-    console.log(req.method, req.url, section.join(','));
+    console.log(req.method, req.url, section.join(', '));
     let body = '';
     req.on('data', (chunk) => {
             body += chunk;
@@ -123,7 +114,7 @@ http.createServer(function (req, res) {
         //     client.send('ping');
         // });
 
-        // const message = JSON.parse(body);
+        // const message = JSON.parse(body ? body : '{}');
         // console.log(body);
 
         if (section.length) {

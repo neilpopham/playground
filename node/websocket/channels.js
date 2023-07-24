@@ -7,13 +7,13 @@ module.exports = class ChannelManager {
 
     channel (name) {
         if (false === this.channels.has(name)) {
-            this.channels.set(name, new Channel(name));
+            this.channels.set(name, new Channel(name, this));
         }
         return this.channels.get(name);
     }
 
-    delete (name) {
-        return this.channels.delete(name);
+    remove (name) {
+        this.channels.delete(name);
     }
 
     unsubscribe (member) {
