@@ -16,7 +16,7 @@ wss.on('connection', (ws) => {
     clients.set(ws, metadata);
 
     channels.channel('_everyone').subscribe(ws);
-    console.log(channels.channel('_everyone').count());
+    console.log('_everyone', channels.channel('_everyone').count());
 
     ws.on('message', (messageAsString) => {
         const message = JSON.parse(messageAsString);
@@ -63,7 +63,7 @@ wss.on('connection', (ws) => {
                 }
             }
         })
-        console.log(channels.channel('_everyone').count());
+        console.log('_everyone', channels.channel('_everyone').count());
     });
 
     ws.on('pong', heartbeat);

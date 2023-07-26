@@ -25,7 +25,7 @@ module.exports = class ChannelManager {
         this.channels.forEach((channel, name) => {
             if (channel.has(member)) {
                 channel.unsubscribe(member);
-                channels.push(name)
+                active.push(name)
             }
         });
         return active;
