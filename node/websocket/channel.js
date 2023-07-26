@@ -48,6 +48,10 @@ module.exports = class Channel {
         return;
     }
 
+    has (name) {
+        return this.members.has(name)
+    }
+
     event (name) {
         if (false === this.events.has(name)) {
             this.events.set(name, new Event(name, this));

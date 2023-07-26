@@ -25,34 +25,63 @@ wss.on('connection', (ws) => {
         if (message.action == 'subscribe') {
             if (message.event) {
                 channels.channel(message.channel).event(message.event).subscribe(ws);
+
+                if (message.event == '_members') {
+                    const members = channels.channel(message.channel).members;
+                    updateMembers(message.channel, members);
+                }
             } else {
                 channels.channel(message.channel).subscribe(ws);
             }
-        }
 
-        if (message.action == 'unsubscribe') {
+        } else if (message.action == 'unsubscribe') {
             if (message.event) {
                 channels.channel(message.channel).event(message.event).unsubscribe(ws);
             } else {
                 channels.channel(message.channel).unsubscribe(ws);
             }
+
+        } else if (message.action == 'meta') {
+            ws[message.key] = message.value;
         }
 
-        message.sender = metadata.id;
+        // message.sender = metadata.id;
 
-        [...clients.keys()].forEach((client) => {
-            client.send(JSON.stringify(message));
-        });
+        // [...clients.keys()].forEach((client) => {
+        //     client.send(JSON.stringify(message));
+        // });
     });
 
     ws.on('close', (code) => {
         clients.delete(ws);
-        channels.unsubscribe(ws);
+        const membership = channels.unsubscribe(ws);
+        membership.forEach(name => {
+            if (['_everyone'].includes(name) === false) {
+                if (channels.has(name)) {
+                    const members = channels.channel(name).members;
+                    updateMembers(name, members);
+                }
+            }
+        })
         console.log(channels.channel('_everyone').count());
     });
 
     ws.on('pong', heartbeat);
 });
+
+const updateMembers = (channel, members) => {
+    const ids = [...members.keys()].map((member) => {
+        return member.id;
+    });
+    [...members.keys()].forEach((member) => {
+        member.send(JSON.stringify({
+            channel: channel,
+            event: '_members',
+            size: members.size,
+            identities: ids,
+        }));
+    });
+}
 
 const interval = setInterval(function ping() {
     wss.clients.forEach(function each(ws) {

@@ -16,10 +16,19 @@ module.exports = class ChannelManager {
         this.channels.delete(name);
     }
 
+    has (name) {
+        return this.channels.has(name)
+    }
+
     unsubscribe (member) {
-        this.channels.forEach((channel) => {
-            channel.unsubscribe(member);
+        const active = [];
+        this.channels.forEach((channel, name) => {
+            if (channel.has(member)) {
+                channel.unsubscribe(member);
+                channels.push(name)
+            }
         });
+        return active;
     }
 
     subs (member) {

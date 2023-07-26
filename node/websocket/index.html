@@ -36,6 +36,8 @@
 
 <script>
 
+const uuid = Math.round(Math.random() * 1000000000000);
+
 // Create WebSocket connection.
 const socket = new WebSocket("ws://localhost:7071/ws");
 
@@ -47,6 +49,8 @@ socket.addEventListener("error", (event) => {
 // Connection opened
 socket.addEventListener("open", (event) => {
     console.log("The connection has been opened successfully.");
+    socket.send(JSON.stringify({ action: 'meta', key: 'id', value: uuid })); 
+    socket.send(JSON.stringify({ action: 'subscribe', channel: 'alpha', event: '_members' })); 
 });
 
 socket.addEventListener("close", (event) => {
