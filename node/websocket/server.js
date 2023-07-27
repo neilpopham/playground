@@ -3,7 +3,9 @@ const http = require('http');
 const fs = require('fs');
 const ChannelManager = require('./channels.js');
 
-const wss = new WebSocket.Server({ port: 7071 });
+const ports = { ws: 7071, api: 7072, web: 7073 };
+
+const wss = new WebSocket.Server({ port: ports.ws });
 const clients = new Map();
 const channels = new ChannelManager();
 
@@ -19,7 +21,20 @@ wss.on('connection', (ws) => {
     console.log('_everyone', channels.channel('_everyone').count());
 
     ws.on('message', (messageAsString) => {
-        const message = JSON.parse(messageAsString);
+        var message;
+        try {
+            message = JSON.parse(messageAsString);
+            console.log(message);
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+                console.error(e.name, messageAsString);
+            } else {
+                console.error(e);
+            }
+            ws.send(JSON.stringify({ error: true, message: 'Invalid JSON' }));
+            return;
+        }
+
         const metadata = clients.get(ws);
 
         if (message.action == 'subscribe') {
@@ -37,13 +52,23 @@ wss.on('connection', (ws) => {
         } else if (message.action == 'unsubscribe') {
             if (message.event) {
                 channels.channel(message.channel).event(message.event).unsubscribe(ws);
+
+                if (message.event == '_members') {
+                    const members = channels.channel(message.channel).members;
+                    updateMembers(message.channel, members);
+                }
             } else {
                 channels.channel(message.channel).unsubscribe(ws);
             }
 
         } else if (message.action == 'meta') {
-            ws[message.key] = message.value;
+            for (const key in message.properties) {
+                ws[key] = message.properties[key];
+            }
+            // ws[message.key] = message.value;
         }
+
+        // ws.send(JSON.stringify({ error: false }));
 
         // message.sender = metadata.id;
 
@@ -53,16 +78,8 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', (code) => {
+        updateChannels(ws);
         clients.delete(ws);
-        const membership = channels.unsubscribe(ws);
-        membership.forEach(name => {
-            if (['_everyone'].includes(name) === false) {
-                if (channels.has(name)) {
-                    const members = channels.channel(name).members;
-                    updateMembers(name, members);
-                }
-            }
-        })
         console.log('_everyone', channels.channel('_everyone').count());
     });
 
@@ -83,9 +100,22 @@ const updateMembers = (channel, members) => {
     });
 }
 
+const updateChannels = (ws) => {
+    const membership = channels.unsubscribe(ws);
+    membership.forEach(name => {
+        if (['_everyone'].includes(name) === false) {
+            if (channels.has(name)) {
+                const members = channels.channel(name).members;
+                updateMembers(name, members);
+            }
+        }
+    })
+};
+
 const interval = setInterval(function ping() {
     wss.clients.forEach(function each(ws) {
         if (ws.isAlive === false) {
+            updateChannels(ws);
             return ws.terminate();
         }
         ws.isAlive = false;
@@ -159,16 +189,17 @@ http.createServer(function (req, res) {
             }
         }
 
-        [...clients.keys()].forEach((client) => {
-            client.send(JSON.stringify(channels.subs(client)));
-        });
+        // [...clients.keys()].forEach((client) => {
+        //     client.send(JSON.stringify(channels.subs(client)));
+        // });
 
+        res.writeHead(200, {'Content-Type': 'application/json'});
         res.write(JSON.stringify({ status: 200 }));
         res.end();
 
     });
 
-}).listen(7072);
+}).listen(ports.api);
 
 /**
  * Webserver
@@ -190,8 +221,8 @@ http.createServer(function (req, res) {
         res.end();
         return;
     }
-}).listen(7073);
+}).listen(ports.web);
 
-console.log('websocket server running on port', 7071);
-console.log('api running on port', 7072);
-console.log('webserver running on port', 7073);
+console.log('websocket server running on port', ports.ws);
+console.log('api running on port', ports.api);
+console.log('webserver running on port', ports.web);
