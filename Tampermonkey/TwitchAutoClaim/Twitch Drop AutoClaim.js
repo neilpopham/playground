@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.7
+// @version      0.8
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.7;
+    const VERSION = 0.8;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
@@ -150,7 +150,7 @@
     };
 
     /**
-     * Converts a calculated progress rate into a fixed value (30m, 45m, 1hr, 2r, 3hr, 4hr).
+     * Converts a calculated progress rate into a fixed value (30m, 45m, 1hr, 2hr, 3hr, 4hr).
      *
      * @param  integer rate The calculated rate.
      * @return integer      The fixed rate.
