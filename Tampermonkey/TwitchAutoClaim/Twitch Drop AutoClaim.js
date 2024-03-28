@@ -20,7 +20,7 @@
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
-    const CLAIM_DROP = 'button.ScCoreButton-sc-ocjdkq-0.ScCoreButtonPrimary-sc-ocjdkq-1.dNGoHt.hdAxZi';
+    const CLAIM_DROP = 'button.ScCoreButton-sc-ocjdkq-0.ScCoreButtonPrimary-sc-ocjdkq-1';
 
     // Handy constants
     const NOW = (new Date()).getTime();
