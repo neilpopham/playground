@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.8
+// @version      0.11
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,11 +16,11 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.8;
+    const VERSION = 0.11;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
-    const CLAIM_DROP = 'button.ScCoreButton-sc-ocjdkq-0.ScCoreButtonPrimary-sc-ocjdkq-1';
+    const CLAIM_DROP = 'button.ScCoreButton-sc-ocjdkq-0.ScCoreButtonPrimary-sc-ocjdkq-1.caieTg.eHSNkH';
 
     // Handy constants
     const NOW = (new Date()).getTime();
@@ -125,27 +125,6 @@
         } catch (e) {
             return false;
         }
-        if (typeof previous.version == 'undefined') {
-            previous.version = typeof previous.start == 'undefined' ? 0.1 : 0.2;
-        }
-        if (previous.version == 0.1) {
-            return false;
-        }
-        if (previous.version < 0.4) {
-            previous = {
-                base: {
-                    time: previous.base,
-                    progress: previous.start,
-                    offset: 0.5,
-                },
-                last: {
-                    time: previous.timestamp,
-                    progress: previous.progress,
-                    expected: null,
-                },
-                version: VERSION
-            };
-        }
         return previous;
     };
 
@@ -190,11 +169,14 @@
      * @return boolean
      */
     const claimDrop = () => {
-        if (document.querySelector(CLAIM_DROP)) {
-            document.querySelector(CLAIM_DROP).click();
-            return true;
+        const nodes = document.querySelectorAll(CLAIM_DROP);
+        if (!nodes.length) {
+            return false;
+        }    
+        for (var i = 0; i < nodes.length; i++) {
+            window.setTimeout((node) => { node.click(); }, i * 2000, nodes[i]);
         }
-        return false;
+        return true;
     };
 
     /**
@@ -215,7 +197,10 @@
         clearTimeout(timeout);
         var progress = 0;
         for (var i = 0; i < nodes.length; i++) {
-            progress = Math.max(progress, nodes[i].getAttribute('value'));
+            const p = nodes[i].getAttribute('value');
+            if (p <= 100) {
+                progress = Math.max(progress, nodes[i].getAttribute('value'));
+            }
         }
         console.log('Progress', progress);
         var rate;
@@ -309,7 +294,6 @@
         previous.last.progress = progress;
         previous.last.rate = rate;
         previous.last.refresh = refresh;
-        dump(previous); // ####################################################################
         GM_setValue('previous', JSON.stringify(previous));
         setTimer(refresh);
     };
@@ -319,7 +303,6 @@
     var refresh = null;
     var interval;
     var previous = getPrevious();
-    dump(previous); // ####################################################################
 
     if (previous) {
         console.log('Baseline', new Date(previous.base.time));
