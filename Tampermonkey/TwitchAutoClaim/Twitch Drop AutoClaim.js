@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.11
+// @version      0.12
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.11;
+    const VERSION = 0.12;
 
     // Page element selectors
     const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
@@ -65,11 +65,18 @@
      * between load times will not exactly match that figure, so we use this buffer
      * when checking whether the load time is expected.
      */
-     const REFRESH_BUFFER = 30; // seconds
+    const REFRESH_BUFFER = 30; // seconds
+
+    /**
+     * The delay between clicking multiple Claim Now buttons.
+     *
+     * If we click too quickly we are identified as a bot.
+     */
+    const CLICK_DELAY = 2000; // miliseconds
 
     /**
      * Dumps an object to the console.
-     * 
+     *
      * @param  object o The object to dump.
      * @return void
      */
@@ -87,7 +94,7 @@
 
     /**
      * Returns the base storage object.
-     * 
+     *
      * @return object
      */
     const getDefaults = () => {
@@ -129,7 +136,7 @@
     };
 
     /**
-     * Converts a calculated progress rate into a fixed value (30m, 45m, 1hr, 2hr, 3hr, 4hr).
+     * Converts a calculated progress rate into a fixed value (30m, 45m, 1hr, 2hr, 3hr, ... 15hr).
      *
      * @param  integer rate The calculated rate.
      * @return integer      The fixed rate.
@@ -137,7 +144,11 @@
     const fixedRate = (rate) => {
         var diff = 10000;
         var fixed = THIRTY_RATE;
-        [18, 27, 36, 72, 108, 144].forEach((r) => {
+        const options = [18, 27];
+        for (var i = 1; i <= 15; i++) {
+            options.push(i * 36);
+        }
+        options.forEach((r) => {
             if (Math.abs(rate - r) < diff) {
                 diff = Math.abs(rate - r);
                 fixed = r;
@@ -161,27 +172,144 @@
             },
             refresh * 1000
         );
+        startCountdown();
     };
 
     /**
-     * Clicks the Claim button.
+     * Clicks any Claim button, with a short delay between each click.
      *
-     * @return boolean
+     * @return Promise
      */
-    const claimDrop = () => {
+    const claimDrop = new Promise((resolve, reject) => {
         const nodes = document.querySelectorAll(CLAIM_DROP);
-        if (!nodes.length) {
-            return false;
-        }    
-        for (var i = 0; i < nodes.length; i++) {
-            window.setTimeout((node) => { node.click(); }, i * 2000, nodes[i]);
+        if (nodes.length == 0) {
+            resolve(false);
         }
-        return true;
+        for (var i = 0; i < nodes.length; i++) {
+            window.setTimeout(
+                (node) => { node.click(); console.log('click') },
+                i * CLICK_DELAY,
+                nodes[i]
+            );
+        }
+        window.setTimeout(() => { resolve(true); }, --i * CLICK_DELAY);
+    });
+
+    const startCountdown = () => {
+        console.log('startCountdown');
+        window.setInterval(
+            () => {
+                console.log(refresh);
+                document.title = title + ' (' + (--refresh).toString() + ')';
+            },
+            1000
+        );
     };
+
+    /**
+     * Runs once the progress bars have finally load.
+     * Contains all the logic used to calculate the page refresh.
+     *
+     * @param  integer progress The largest progress value.
+     * @return void
+     */
+    const processPage = (progress) => {
+        var rate = THIRTY_RATE;
+        claimDrop
+            .then((claimed) => {
+                if (claimed) {
+                    progress = progresses.pop();
+                    if (typeof progress == 'undefined') {
+                        progress = 0;
+                    }
+                    refresh = rate * (100 - progress);
+                    previous = getDefaults();
+                    previous.base = {
+                        time: NOW,
+                        progress: progress,
+                        offset: 0,
+                    };
+                } else {
+                   if (previous) {
+                        const increase = {
+                            base: progress - previous.base.progress,
+                            last: progress - previous.last.progress,
+                        }
+                        if (increase.last < 1) {
+                            previous = false;
+                            console.log('No increase since last load, resetting data')
+                        } else {
+                            rate = fixedRate(Math.ceil(interval.base / increase.base));
+                            if (previous.last.expected) {
+                                var reduce = true;
+                                var diff = 0;
+                                console.log('Expected increase of', previous.last.expected);
+                                console.log('Actual increase is', increase.last)
+                                if (previous.last.expected == increase.last) {
+                                    diff = Math.floor(previous.last.rate * previous.base.offset);
+                                } else if (Math.abs(interval.last - previous.last.refresh) > REFRESH_BUFFER) {
+                                    console.log('Not a full refesh');
+                                    const expected = Math.floor(interval.last / rate);
+                                    console.log('New expected increase of', expected);
+                                    if (increase.last > expected) {
+                                        diff = interval.last - expected * rate;
+                                    } else {
+                                        reduce = increase.last < expected;
+                                    }
+                                }
+                                if (diff > 0) {
+                                    console.log('Reduced base time by', diff, 'seconds');
+                                    previous.base.time -= diff * 1000;
+                                }
+                                if (reduce) {
+                                    previous.base.offset /= 2;
+                                    if (previous.base.offset < 0.01) {
+                                        previous.base.offset = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!previous) {
+                        rate = THIRTY_RATE;
+                        previous = getDefaults();
+                        previous.base = {
+                            time: NOW,
+                            progress: progress,
+                            offset: 0.5,
+                        };
+                    }
+                    console.log('Rate', rate);
+                    refresh = (100 - progress) * rate;
+                    previous.last.expected = null;
+                    if (previous.last.progress !== null) {
+                        if (refresh < MAX_REFRESH) {
+                            var p = Math.min(100, previous.base.progress + (interval.base / rate));
+                            console.log('Accurate progress', p.toFixed(3));
+                            // NOTE:
+                            // Sometimes p > progress
+                            // Do we rely on time/rate (p), and assume ui has not been updated recently, or:
+                            // p = Math.min(p, progress + 0.5);
+                            refresh = Math.max(rate, Math.ceil((100 - p) * rate) + TIME_BUFFER);
+                        } else if (previous.base.offset > 0) {
+                            previous.last.expected = Math.floor(MAX_REFRESH / rate);
+                            refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
+                        }
+                    }
+                    refresh = Math.min(refresh, MAX_REFRESH);
+                    console.log('Refresh', refresh);
+                }
+                previous.last.time = NOW;
+                previous.last.progress = progress;
+                previous.last.rate = rate;
+                previous.last.refresh = refresh;
+                GM_setValue('previous', JSON.stringify(previous));
+                setTimer(refresh);
+            });
+    }
 
     /**
      * Runs when the dom updates, used to gain access to the progress bars, when they finally load.
-     * Contains all the logic used to calculate the page refresh.
      *
      * @param  array mutationsList The list of mutations.
      * @return void
@@ -195,113 +323,25 @@
             return;
         }
         clearTimeout(timeout);
-        var progress = 0;
-        for (var i = 0; i < nodes.length; i++) {
-            const p = nodes[i].getAttribute('value');
-            if (p <= 100) {
-                progress = Math.max(progress, nodes[i].getAttribute('value'));
-            }
-        }
+        progresses = nodes
+            .map((node) => {
+                return node.getAttribute('value');
+            })
+            .filter((progress) => {
+                progress <= 100;
+            })
+            .sort((a, b) => { a == b ? 0 : (a < b ? -1 : 1) });
+        progress = progresses.pop();
         console.log('Progress', progress);
-        var rate;
-        if (progress == 100) {
-            rate = THIRTY_RATE;
-            if (claimDrop()) {
-                console.log('Drop claimed!');
-                refresh = rate * 100;
-                progress = 0;
-                previous = getDefaults();
-                previous.base = {
-                    time: (new Date()).getTime(),
-                    progress: 0,
-                    offset: 0,
-                };
-            } else {
-                refresh = rate;
-            }
-        } else {
-            if (previous) {
-                const increase = {
-                    base: progress - previous.base.progress,
-                    last: progress - previous.last.progress,
-                }
-                if (increase.last < 1) {
-                    previous = false;
-                    console.log('No increase since last load, resetting data')
-                } else {
-                    rate = fixedRate(Math.ceil(interval.base / increase.base));
-                    if (previous.last.expected) {
-                        var reduce = true;
-                        var diff = 0;
-                        console.log('Expected increase of', previous.last.expected);
-                        console.log('Actual increase is', increase.last)
-                        if (previous.last.expected == increase.last) {
-                            diff = Math.floor(previous.last.rate * previous.base.offset);
-                        } else if (Math.abs(interval.last - previous.last.refresh) > REFRESH_BUFFER) {
-                            console.log('Not a full refesh');
-                            const expected = Math.floor(interval.last / rate);
-                            console.log('New expected increase of', expected);
-                            if (increase.last > expected) {
-                                diff = interval.last - expected * rate;
-                            } else {
-                                reduce = increase.last < expected;
-                            }
-                        }
-                        if (diff > 0) {
-                            console.log('Reduced base time by', diff, 'seconds');
-                            previous.base.time -= diff * 1000;
-                        }
-                        if (reduce) {
-                            previous.base.offset /= 2;
-                            if (previous.base.offset < 0.01) {
-                                previous.base.offset = 0;
-                            }
-                        }
-                    }
-                }
-            }
-            if (!previous) {
-                rate = THIRTY_RATE;
-                previous = getDefaults();
-                previous.base = {
-                    time: NOW,
-                    progress: progress,
-                    offset: 0.5,
-                };
-            }
-            console.log('Rate', rate);
-            refresh = (100 - progress) * rate;
-            previous.last.expected = null;
-            if (previous.last.progress !== null) {
-                if (refresh < MAX_REFRESH) {
-                    var p = Math.min(100, previous.base.progress + (interval.base / rate));
-                    console.log('Accurate progress', p.toFixed(3));
-                    // NOTE:
-                    // Sometimes p > progress
-                    // Do we rely on time/rate (p), and assume ui has not been updated recently, or:
-                    // p = Math.min(p, progress + 0.5);
-                    refresh = Math.max(rate, Math.ceil((100 - p) * rate) + TIME_BUFFER);
-                } else if (previous.base.offset > 0) {
-                    previous.last.expected = Math.floor(MAX_REFRESH / rate);
-                    refresh = (previous.last.expected * rate) - Math.floor(rate * previous.base.offset);
-                }
-            }
-            refresh = Math.min(refresh, MAX_REFRESH);
-            console.log('Refresh', refresh);
-        }
-
-        previous.last.time = NOW;
-        previous.last.progress = progress;
-        previous.last.rate = rate;
-        previous.last.refresh = refresh;
-        GM_setValue('previous', JSON.stringify(previous));
-        setTimer(refresh);
+        processPage(progress);
     };
 
     console.log('Loaded at', new Date());
     var timeout;
     var refresh = null;
     var interval;
+    var progresses;
+    const title = document.title;
     var previous = getPrevious();
 
     if (previous) {
@@ -326,7 +366,8 @@
     timeout = window.setTimeout(
         () => {
             GM_setValue('previous', false);
-            setTimer(100 * THIRTY_RATE);
+            refresh = 100 * THIRTY_RATE;
+            setTimer(refresh);
         },
         10000
     );
