@@ -19,7 +19,7 @@
     const VERSION = 0.12;
 
     // Page element selectors
-    const PROGRESS_BAR = 'div[data-a-target="tw-progress-bar-animation"]';
+    const PROGRESS_BAR = 'div.tw-progress-bar';
     const CLAIM_DROP = 'button.ScCoreButton-sc-ocjdkq-0.ScCoreButtonPrimary-sc-ocjdkq-1.caieTg.eHSNkH';
 
     // Handy constants
@@ -196,10 +196,8 @@
     });
 
     const startCountdown = () => {
-        console.log('startCountdown');
         window.setInterval(
             () => {
-                console.log(refresh);
                 document.title = title + ' (' + (--refresh).toString() + ')';
             },
             1000
@@ -323,15 +321,15 @@
             return;
         }
         clearTimeout(timeout);
-        progresses = nodes
+        progresses = [...nodes]
             .map((node) => {
-                return node.getAttribute('value');
+                return Number(node.getAttribute('aria-valuenow'));
             })
             .filter((progress) => {
-                progress <= 100;
+                return progress <= 100;
             })
             .sort((a, b) => { a == b ? 0 : (a < b ? -1 : 1) });
-        progress = progresses.pop();
+        const progress = progresses.pop();
         console.log('Progress', progress);
         processPage(progress);
     };
