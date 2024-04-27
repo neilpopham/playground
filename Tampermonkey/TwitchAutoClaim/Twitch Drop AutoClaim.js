@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Drop Auto-Claim
 // @namespace    https://greasyfork.org/en/users/1077259-synthetic
-// @version      0.12
+// @version      0.13
 // @description  Auto-Claims drops, while attempting to evade bot detection and claim quickly.
 // @author       @Synthetic
 // @license      MIT
@@ -16,7 +16,7 @@
     'use strict';
 
     // The current version
-    const VERSION = 0.12;
+    const VERSION = 0.13;
 
     // Page element selectors
     const PROGRESS_BAR = 'div.tw-progress-bar';
@@ -72,7 +72,7 @@
      *
      * If we click too quickly we are identified as a bot.
      */
-    const CLICK_DELAY = 2000; // miliseconds
+    const CLICK_DELAY = 8000; // miliseconds
 
     /**
      * Dumps an object to the console.
@@ -182,10 +182,12 @@
      */
     const claimDrop = new Promise((resolve, reject) => {
         const nodes = document.querySelectorAll(CLAIM_DROP);
+        console.log(nodes);
         if (nodes.length == 0) {
             resolve(false);
         }
         for (var i = 0; i < nodes.length; i++) {
+            console.log(nodes[i]);
             window.setTimeout(
                 (node) => { node.click(); console.log('click') },
                 i * CLICK_DELAY,
@@ -228,7 +230,7 @@
                         offset: 0,
                     };
                 } else {
-                   if (previous) {
+                    if (previous) {
                         const increase = {
                             base: progress - previous.base.progress,
                             last: progress - previous.last.progress,
@@ -313,25 +315,47 @@
      * @return void
      */
     const onMutate = (mutationsList) => {
+        var nodes;
+        nodes = document.querySelectorAll(CLAIM_DROP);
+        if (nodes.length) {
+            for (var i = 0; i < nodes.length; i++) {
+                window.setTimeout(
+                    (node) => { node.click(); },
+                    i * CLICK_DELAY,
+                    nodes[i]
+                );
+            }  
+            progress = progresses.pop();
+            if (typeof progress == 'undefined') {
+                progress = 0;
+            }
+            refresh = rate * (100 - progress);
+            previous = getDefaults();
+            previous.base = {
+                time: NOW,
+                progress: progress,
+                offset: 0,
+            };                      
+        }        
         if (refresh != null) {
             return;
         }
-        const nodes = document.querySelectorAll(PROGRESS_BAR);
-        if (!nodes.length) {
-            return;
-        }
-        clearTimeout(timeout);
-        progresses = [...nodes]
-            .map((node) => {
-                return Number(node.getAttribute('aria-valuenow'));
-            })
-            .filter((progress) => {
-                return progress <= 100;
-            })
-            .sort((a, b) => { a == b ? 0 : (a < b ? -1 : 1) });
-        const progress = progresses.pop();
-        console.log('Progress', progress);
-        processPage(progress);
+        nodes = document.querySelectorAll(PROGRESS_BAR);
+        if (nodes.length) {
+            clearTimeout(timeout);
+            progresses = [...nodes]
+                .map((node) => {
+                    return Number(node.getAttribute('aria-valuenow'));
+                })
+                .filter((progress) => {
+                    return progress <= 100;
+                })
+                .sort((a, b) => { return a == b ? 0 : (a < b ? -1 : 1) });
+            console.log(progresses);
+            const progress = progresses.pop();
+            console.log('Progress', progress);
+            processPage(progress);
+        }    
     };
 
     console.log('Loaded at', new Date());
