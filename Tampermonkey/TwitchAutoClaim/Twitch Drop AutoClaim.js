@@ -75,6 +75,12 @@
     const CLICK_DELAY = 8000; // miliseconds
 
     /**
+     * The delay to wait to see if all mutations are done.
+     *
+     */
+    const MUTATE_DELAY = 5000; // miliseconds
+
+    /**
      * Dumps an object to the console.
      *
      * @param  object o The object to dump.
@@ -207,14 +213,28 @@
     };
 
     /**
-     * Runs once the progress bars have finally load.
+     * Runs once the widgets have finally load.
      * Contains all the logic used to calculate the page refresh.
      *
      * @param  integer progress The largest progress value.
      * @return void
      */
-    const processPage = (progress) => {
+    const processPage = () => {
         var rate = THIRTY_RATE;
+        var progress = 0;
+        var nodes = document.querySelectorAll(PROGRESS_BAR);
+        if (nodes.length) {
+            progresses = [...nodes]
+                .map((node) => {
+                    return Number(node.getAttribute('aria-valuenow'));
+                })
+                .filter((progress) => {
+                    return progress <= 100;
+                })
+                .sort((a, b) => { return a == b ? 0 : (a < b ? -1 : 1) });
+            progress = progresses.pop();
+            console.log('Progress', progress);
+        }
         claimDrop
             .then((claimed) => {
                 if (claimed) {
@@ -315,53 +335,16 @@
      * @return void
      */
     const onMutate = (mutationsList) => {
-        var nodes;
-        nodes = document.querySelectorAll(CLAIM_DROP);
-        if (nodes.length) {
-            for (var i = 0; i < nodes.length; i++) {
-                window.setTimeout(
-                    (node) => { node.click(); },
-                    i * CLICK_DELAY,
-                    nodes[i]
-                );
-            }  
-            progress = progresses.pop();
-            if (typeof progress == 'undefined') {
-                progress = 0;
-            }
-            refresh = rate * (100 - progress);
-            previous = getDefaults();
-            previous.base = {
-                time: NOW,
-                progress: progress,
-                offset: 0,
-            };                      
-        }        
-        if (refresh != null) {
-            return;
-        }
-        nodes = document.querySelectorAll(PROGRESS_BAR);
-        if (nodes.length) {
-            clearTimeout(timeout);
-            progresses = [...nodes]
-                .map((node) => {
-                    return Number(node.getAttribute('aria-valuenow'));
-                })
-                .filter((progress) => {
-                    return progress <= 100;
-                })
-                .sort((a, b) => { return a == b ? 0 : (a < b ? -1 : 1) });
-            console.log(progresses);
-            const progress = progresses.pop();
-            console.log('Progress', progress);
-            processPage(progress);
-        }    
+        clearTimeout(timeout);
+        clearTimeout(loading);
+        loading = window.setTimeout(processPage, MUTATE_DELAY);
     };
 
     console.log('Loaded at', new Date());
     var timeout;
     var refresh = null;
     var interval;
+    var loading;
     var progresses;
     const title = document.title;
     var previous = getPrevious();
